@@ -1,53 +1,28 @@
 import cv2
-import sys
 import csv
+import time
+
+STARTED_TIME = time.time()
 
 data = list()
-f=open('human.csv','r')
-rea=csv.reader(f)
-for row in rea:
-    data.append(row)
-f.close
+CSV_DF = {}
+with open('./영상link합치기/human.csv', 'r', encoding='utf-8') as f:
+    for word, link in list(csv.reader(f)):
+        CSV_DF[word] = link
 
-new_list =[]
-
-def link(word) :
-    for x,y in data :
-        if word == x :
-            new_list.append(y)
-
-link('ㄱ')
-link('가다')
-link('가마')
-
-def video_output() :
-    for i in range(len(new_list)) :
-        cap = cv2.VideoCapture(new_list[i])
-
-        if not cap.isOpened() :
-            sys.exit
-    
-        frame_cnt = round(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        fps = cap.get(cv2.CAP_PROP_FPS)
-        effect_frames = int(fps)
-
-        delay = int(1000/fps)
-
-        w = round(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        h = round(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-        fourcc = cv2.VideoWriter_fourcc(*'DIVX')    
-        out = cv2.VideoWriter('output.avi', fourcc, fps, (w,h))
-
-        while True :
+def video_output(words):
+    out = cv2.VideoWriter('output.avi', cv2.VideoWriter_fourcc(*'DIVX'), 30, (700, 466))
+    for idx in range(len(words)) :
+        cap = cv2.VideoCapture(CSV_DF[words[idx]])
+        frame_pass = False if cap.get(cv2.CAP_PROP_FPS) < 30 else True; frame_cnt = 0
+        while True:
             ret,frame = cap.read()
-
-            if not ret :
-                break
-    
-            cv2.imshow('frame',frame)
-            cv2.waitKey(delay)
+            frame_cnt += 1
+            if not ret: break
+            if frame_pass and frame_cnt % 2 == 1: continue
             out.write(frame)
 
-video_output()
+video_output(['호박', '홍콩', '가마'])
+ENDED_TIME = time.time()
+print('Working Time: ', ENDED_TIME - STARTED_TIME)
 
